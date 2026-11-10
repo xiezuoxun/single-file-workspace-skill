@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通用工作台 · 模板</title>
+<!-- 单文件工作台模板：CSS / JS / 图表 / 图标全内联，零外部依赖；业务字段全部由 CONFIG 驱动 -->
+<style>
+  :root{
+    --bg:#171327; --surface:#221a3d; --surface2:#2a2150;
+    --line:rgba(167,139,250,.18); --line2:rgba(255,255,255,.08);
+    --txt:#ece9f5; --txt2:#a79fc4;
+    --accent:#8b6df0; --accent-d:#6d4fd6;
+    --ok:#3ecf8e; --warn:#f5b942; --bad:#f06a6a; --info:#5aa9f0;
+    --r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--txt);font-size:13px;line-height:1.5;min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}
+  .layout{display:flex;min-height:100vh}
+  .sidebar{width:220px;flex:0 0 220px;position:sticky;top:0;height:100vh;background:rgba(23,19,39,.92);
+    border-right:1px solid var(--line);padding:16px 14px;display:flex;flex-direction:column;gap:12px;z-index:40}
+  .brand{font-weight:700;font-size:14px;line-height:1.35}
+  .brand span{display:block;color:var(--accent);font-size:11px;font-weight:500}
+  nav{display:flex;flex-direction:column;gap:4px}
+  nav button{background:transparent;border:none;color:var(--txt2);padding:10px 12px;border-radius:8px;
+    cursor:pointer;font-size:12.5px;text-align:left;border-left:2px solid transparent;min-height:44px}
+  nav button:hover{color:var(--txt);background:rgba(139,109,240,.06)}
+  nav button.active{background:rgba(139,109,240,.14);color:#fff;font-weight:600;border-left-color:var(--accent)}
+  .main{flex:1;min-width:0}
+  .mobtop{display:none;position:sticky;top:0;z-index:35;background:rgba(23,19,39,.94);
+    border-bottom:1px solid var(--line);padding:10px 14px;align-items:center;gap:10px}
+  .iconbtn{background:var(--surface2);border:1px solid var(--line2);color:var(--txt);border-radius:8px;
+    width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .iconbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+  main{max-width:1280px;margin:0 auto;padding:18px 22px calc(44px + env(safe-area-inset-bottom))}
+  .topbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .topbar .grow{flex:1}
+  .sync{font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--line2);color:var(--txt2);white-space:nowrap}
+  .sync.synced{color:var(--ok);border-color:rgba(62,207,142,.4)}
+  .sync.syncing{color:var(--info);border-color:rgba(90,169,240,.4)}
+  .sync.dirty{color:var(--warn);border-color:rgba(245,185,66,.4)}
+  .card{background:var(--surface);border:1px solid var(--line2);border-radius:var(--r);padding:16px 18px;margin-bottom:16px}
+  .card h2{margin:0 0 2px;font-size:15px;font-weight:700}
+  .card .desc{color:var(--txt2);font-size:11.5px;margin-bottom:12px}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:10px}
+  .kpi .box{background:var(--surface2);border:1px solid var(--line2);border-radius:10px;padding:11px 13px}
+  .kpi .k{font-size:10.5px;color:var(--txt2)}
+  .kpi .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .btn{background:var(--accent-d);border:1px solid var(--line2);color:#fff;border-radius:8px;
+    padding:9px 13px;min-height:44px;cursor:pointer;font-size:12px;font-weight:600}
+  .btn.ghost{background:var(--surface2)}
+  .btn.sm{min-height:36px;padding:5px 10px;font-size:11px}
+  .btn.danger{background:rgba(240,106,106,.18);color:var(--bad)}
+  .seg{display:inline-flex;background:var(--surface2);border:1px solid var(--line2);border-radius:9px;padding:3px;gap:3px}
+  .seg button{background:transparent;border:none;color:var(--txt2);padding:7px 13px;border-radius:7px;
+    cursor:pointer;font-size:12px;min-height:36px}
+  .seg button.on{background:var(--accent-d);color:#fff;font-weight:600}
+  input,select,textarea{background:rgba(0,0,0,.22);border:1px solid var(--line2);color:var(--txt);
+    border-radius:7px;padding:7px 9px;font-size:13px;outline:none;max-width:100%}
+  input:focus,select:focus{border-color:var(--accent)}
+  label.fd{display:flex;flex-direction:column;gap:3px;font-size:10.5px;color:var(--txt2)}
+  .tbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl table{border-collapse:separate;border-spacing:0;width:100%;min-width:600px}
+  .tbl th,.tbl td{padding:8px 9px;border-bottom:1px solid var(--line2);text-align:center;font-size:12px}
+  .tbl th{color:var(--accent);font-weight:700;font-size:11px;background:var(--surface2)}
+  .tbl td.l,.tbl th.l{text-align:left;white-space:nowrap}
+  .tbl .hint{font-size:10px;color:var(--txt2);font-weight:400}
+  .tbl table tr.sumrow td{background:rgba(139,109,240,.13);border-top:2px solid var(--accent);font-weight:700}
+  .tbl table tr.sumrow td.l b{color:var(--accent)}
+  .tbl table tr.sumrow .hint{color:var(--txt2);font-weight:400}
+  .heat{display:inline-block;padding:1px 7px;border-radius:6px;border:1px solid;font-size:11px;font-weight:700}
+  .bar{display:inline-block;width:64px;height:6px;border-radius:4px;background:rgba(255,255,255,.1);vertical-align:middle;margin-right:5px}
+  .bar i{display:block;height:100%;border-radius:4px;background:var(--ok)}
+  .todo{border-left:3px solid var(--warn);background:rgba(245,185,66,.08);border-radius:10px;padding:11px 13px;margin-bottom:14px}
+  .todo .t{font-size:12.5px;font-weight:700;color:var(--warn);margin-bottom:7px}
+  .todoItem{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;padding:6px 0;border-bottom:1px solid var(--line2)}
+  .todoItem .late{color:var(--bad);font-weight:700}
+  .todoItem .done{color:var(--txt2);text-decoration:line-through}
+  .wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .subcard{background:var(--surface2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px}
+  .subcard h3{margin:0 0 4px;font-size:13px}
+  .subcard .sub{font-size:11px;color:var(--txt2);margin-bottom:9px}
+  .mini{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .mini .m{flex:1 1 78px;background:rgba(0,0,0,.16);border:1px solid var(--line2);border-radius:9px;padding:8px 10px}
+  .mini .m .k{font-size:10px;color:var(--txt2)}
+  .mini .m .v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+  .sumbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:linear-gradient(90deg,rgba(139,109,240,.18),rgba(139,109,240,.05));
+    border:1px solid rgba(139,109,240,.42);border-left:3px solid var(--accent);border-radius:12px;padding:11px 14px}
+  .sumbar .t{font-size:12.5px;font-weight:800;color:var(--accent);white-space:nowrap}
+  .sumbar .it{display:flex;flex-direction:column;min-width:72px}
+  .sumbar .it .k{font-size:10px;color:var(--txt2)}
+  .sumbar .it .v{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+  .sumbar .note{font-size:10.5px;color:var(--txt2);margin-left:auto;text-align:right;line-height:1.5}
+  /* 关系图：固定两列 + 定高，杜绝 flex 最后一行单卡被撑大 */
+  .stars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px;align-items:start}
+  .starBox{min-width:0;height:150px;display:flex;flex-direction:column;background:rgba(0,0,0,.16);
+    border:1px solid var(--line2);border-radius:10px;padding:6px}
+  .starBox .cap{font-size:10.5px;color:var(--txt2);text-align:center;height:14px;line-height:14px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .starBox svg{display:block;width:100%;height:118px;flex:0 0 118px}
+  .formRow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;background:var(--surface2);
+    border:1px solid var(--line2);border-radius:10px;padding:10px;margin-bottom:10px}
+  .empty{padding:18px;text-align:center;color:var(--txt2);font-size:12px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--surface2);
+    border:1px solid var(--accent);color:var(--txt);padding:10px 16px;border-radius:9px;z-index:99;font-size:12px}
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:38;display:none}
+  .mask.show{display:block}
+  @media(max-width:920px){
+    .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .22s ease;
+      width:262px;box-shadow:0 0 0 100vmax rgba(0,0,0,0)}
+    .sidebar.open{transform:translateX(0);box-shadow:0 0 0 100vmax rgba(0,0,0,.42)}
+    .mobtop{display:flex}
+    main{padding:14px 12px calc(40px + env(safe-area-inset-bottom))}
+    /* 宽表横滚时冻结首列，名称始终可见；不透明背景避免内容穿透 */
+    .tbl table.freeze th:first-child,.tbl table.freeze td:first-child{
+      position:sticky;left:0;z-index:2;width:96px;min-width:96px;
+      background:var(--surface);border-right:1px solid var(--line)}
+    .tbl table.freeze thead th:first-child{z-index:4;background:var(--surface2)}
+    .tbl table.freeze tr.sumrow td:first-child{
+      background:linear-gradient(rgba(139,109,240,.22),rgba(139,109,240,.22)),var(--surface)}
+    .wrap{grid-template-columns:1fr}
+    .stars{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+    .starBox{height:134px}.starBox svg{height:102px;flex-basis:102px}
+    .sumbar .note{margin-left:0;width:100%;text-align:left}
+    .sumbar .it{flex:1 1 68px;min-width:68px}
+    /* iOS 输入框字号 >=16px，否则会自动放大页面 */
+    input,select,textarea{font-size:16px}
+    .formRow label.fd{flex:1 1 45%}
+    .formRow input,.formRow select{width:100%}
+  }
+  @media(max-width:380px){ .stars{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="mask" id="sideMask"></div>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand" id="brandTitle">通用工作台<span>单文件 · 离线可用</span></div>
+    <label class="fd"><span>数据日期</span><input type="date" id="datePick"></label>
+    <nav id="nav">
+      <button data-v="board" class="active">进度看板</button>
+      <button data-v="roster">成员名册</button>
+      <button data-v="growth">目标与扩充</button>
+    </nav>
+    <div style="margin-top:auto;font-size:10.5px;color:var(--txt2)">数据保存在本机浏览器<br>请定期导出备份</div>
+  </aside>
+  <div class="main">
+    <div class="mobtop">
+      <button class="iconbtn" data-act="toggleSidebar" aria-label="打开导航">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <strong id="mobTitle" style="font-size:13px">通用工作台</strong>
+    </div>
+    <main id="app">
+      <div class="topbar">
+        <span class="sync" id="syncStatus">本地模式</span>
+        <span class="grow"></span>
+        <button class="btn ghost" data-act="exportJSON">导出 JSON 备份</button>
+        <button class="btn ghost" data-act="importJSON">导入恢复</button>
+        <button class="btn ghost danger" data-act="clearDemo">清空示例数据</button>
+      </div>
+      <div id="viewRoot"></div>
+    </main>
+  </div>
+</div>
+<input type="file" id="restoreFile" accept=".json,application/json" hidden>
+<input type="file" id="rosterFile" accept=".csv,.json,.txt" hidden>
+
+<script>
+/* ============================================================
+   1. CONFIG —— 定制这个工作台，只改这里和 seedData()
+   ============================================================ */
+const CONFIG={
+  title:'通用工作台',
+  subtitle:'按分组 / 负责人查看进度与目标',
+  storageKey:'ws_generic_v1',        /* localStorage 主键，换场景务必改名避免冲突 */
+  groups:[
+    {id:'g1',name:'A 组'},{id:'g2',name:'B 组'},{id:'g3',name:'C 组'}
+  ],
+  metrics:[
+    {id:'k1',name:'指标一',defaultTarget:4},
+    {id:'k2',name:'指标二',defaultTarget:3},
+    {id:'k3',name:'指标三',defaultTarget:3}
+  ],
+  states:['未开始','进行中','已完成'],
+  stages:['跟进中','已确认','已完成','暂缓'],
+  activeStages:['跟进中','已确认'],
+  rosterFields:['分组','负责人','成员编号','姓名','备注'],
+  accent:'#8b6df0'
+};
+
+/* ============================================================
+   2. 数据层 —— 只负责读写存储；HostDB 是可选云同步适配器
+   ------------------------------------------------------------
+   宿主若提供 window.HostDB = { get(key):Promise<string|null>,
+                                set(key,value):Promise<void> }
+   则启用云端镜像；否则静默降级为纯本地，不影响任何功能。
+   ============================================================ */
+function todayStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dayOffset(n){
+  const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function seedData(){
+  const t=todayStr();
+  return {
+    version:1, demo:true,
+    owners:[
+      {id:'o1',name:'负责人 A',group:'g1'},
+      {id:'o2',name:'负责人 B',group:'g2'},
+      {id:'o3',name:'负责人 C',group:'g3'}
+    ],
+    members:[
+      {id:'m1',group:'g1',owner:'o1',code:'A-01',name:'示例成员 01',note:''},
+      {id:'m2',group:'g1',owner:'o1',code:'A-02',name:'示例成员 02',note:''},
+      {id:'m3',group:'g2',owner:'o2',code:'B-01',name:'示例成员 03',note:''},
+      {id:'m4',group:'g2',owner:'o2',code:'B-02',name:'示例成员 04',note:''},
+      {id:'m5',group:'g2',owner:'o2',code:'B-03',name:'示例成员 05',note:''},
+      {id:'m6',group:'g3',owner:'o3',code:'C-01',name:'示例成员 06',note:''}
+    ],
+    /* progress[date][memberId] = { k1:number, k2:number, ... } */
+    progress:{ [t]:{ m1:{k1:2,k2:1,k3:0}, m2:{k1:1,k2:0,k3:1},
+                     m3:{k1:3,k2:2,k3:1}, m4:{k1:0,k2:1,k3:0},
+                     m5:{k1:1,k2:0,k3:0}, m6:{k1:0,k2:2,k3:1} } },
+    /* targets[groupId] = { k1:number, ... }，按分组长期沿用 */
+    targets:{
+      g1:{k1:8,k2:6,k3:6}, g2:{k1:9,k2:6,k3:6}, g3:{k1:6,k2:5,k3:5}
+    },
+    tasks:[
+      {id:'t1',title:'示例：整理上周汇总',due:dayOffset(-2),done:false},   /* 逾期 */
+      {id:'t2',title:'示例：核对名册',due:dayOffset(0),done:false},
+      {id:'t3',title:'示例：更新进度',due:dayOffset(1),done:false},
+      {id:'t4',title:'示例：归档资料',due:dayOffset(-1),done:true}
+    ],
+    goals:{g1:3,g2:2,g3:2},             /* 扩充目标，手工填写 */
+    headcount:{},                        /* 规模目标，手工填写 */
+    pipeline:[
+      {id:'p1',group:'g1',name:'候补 01',stage:'跟进中',createdAt:dayOffset(-8)},
+      {id:'p2',group:'g2',name:'候补 02',stage:'已确认',createdAt:dayOffset(-3)},
+      {id:'p3',group:'g3',name:'候补 03',stage:'已完成',createdAt:dayOffset(-5)}
+    ]
+  };
+}
+function hostDb(){
+  try{ return (window.HostDB && typeof window.HostDB.get==='function' && typeof window.HostDB.set==='function') ? window.HostDB : null; }
+  catch(e){ return null; }
+}
+let STATE=null;
+function normalize(d){
+  if(!d||typeof d!=='object') return seedData();
+  const s=seedData();
+  /* 向后兼容：只补缺失字段，绝不覆盖已有数据 */
+  ['owners','members','progress','targets','tasks','goals','headcount','pipeline'].forEach(k=>{
+    if(d[k]==null) d[k]=s[k];
+  });
+  if(!d.goals) d.goals={};
+  if(!d.headcount) d.headcount={};
+  return d;
+}
+function load(){
+  try{ const raw=localStorage.getItem(CONFIG.storageKey); if(raw) return normalize(JSON.parse(raw)); }
+  catch(e){}
+  const s=seedData(); localStorage.setItem(CONFIG.storageKey,JSON.stringify(s)); return s;
+}
+function setSync(status){
+  const el=document.getElementById('syncStatus'); if(!el) return;
+  const txt={synced:'已同步',syncing:'同步中…',dirty:'待同步',local:'本地模式'};
+  el.className='sync '+status; el.textContent=txt[status]||'本地模式';
+}
+let CLOUD_TIMER=null;
+function save(){
+  localStorage.setItem(CONFIG.storageKey,JSON.stringify(STATE));
+  const db=hostDb();
+  if(!db){ setSync('local'); return; }
+  setSync('dirty');
+  clearTimeout(CLOUD_TIMER);
+  CLOUD_TIMER=setTimeout(function(){
+    setSync('syncing');
+    Promise.resolve(db.set(CONFIG.storageKey,JSON.stringify(STATE)))
+      .then(function(){ setSync('synced'); })
+      .catch(function(){ setSync('local'); });   /* 断网/失败静默降级，本地数据不丢 */
+  },350);
+}
+function adoptCloud(){
+  const db=hostDb(); if(!db){ setSync('local'); return; }
+  setSync('syncing');
+  Promise.resolve(db.get(CONFIG.storageKey)).then(function(raw){
+    if(!raw){ setSync('synced'); return; }
+    const remote=normalize(JSON.parse(raw));
+    /* 冲突处理：以最新写入为准；本地独有的新增条目保留 */
+    STATE={
+      ...remote,
+      members:mergeById(STATE.members,remote.members),
+      tasks:mergeById(STATE.tasks,remote.tasks),
+      pipeline:mergeById(STATE.pipeline,remote.pipeline)
+    };
+    localStorage.setItem(CONFIG.storageKey,JSON.stringify(STATE));
+    setSync('synced'); refreshAll();
+  }).catch(function(){ setSync('local'); });
+}
+function mergeById(localList,remoteList){
+  const map=new Map();
+  (remoteList||[]).forEach(x=>map.set(x.id,x));
+  (localList||[]).forEach(x=>{ if(!map.has(x.id)) map.set(x.id,x); });
+  return Array.from(map.values());
+}
+
+/* ============================================================
+   3. 工具 + 计算层 —— 纯函数，只返回数据，绝不触碰 DOM / 渲染
+   ============================================================ */
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function pct(a,b){ return b>0?Math.round(a/b*100):0; }
+function sum(a){ return a.reduce((x,y)=>x+(+y||0),0); }
+function uid(p){ return p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m;
+  document.body.appendChild(t); setTimeout(function(){ t.remove(); },1900); }
+function heat(p){
+  const v=Math.max(0,Math.min(100,p)), hue=v*1.2;
+  return {bg:`hsla(${hue},68%,46%,.16)`,bd:`hsla(${hue},68%,52%,.5)`,fg:`hsl(${hue},80%,74%)`};
+}
+function heatCell(p){ const c=heat(p);
+  return `<span class="heat" style="background:${c.bg};border-color:${c.bd};color:${c.fg}">${p}%</span>`; }
+function groupName(id){ const g=CONFIG.groups.find(x=>x.id===id); return g?g.name:id; }
+function ownerName(id){ const o=STATE.owners.find(x=>x.id===id); return o?o.name:'—'; }
+function progOf(memberId){
+  const day=STATE.progress[CUR_DATE]||{};
+  return day[memberId]||{};
+}
+function targetsOf(groupId){
+  const t=(STATE.targets||{})[groupId]||{};
+  return Object.fromEntries(CONFIG.metrics.map(m=>[m.id,+t[m.id]||m.defaultTarget||0]));
+}
+function scopes(){
+  return BOARD_MODE==='group'
+    ? CONFIG.groups.map(g=>({key:g.id,name:g.name,list:STATE.members.filter(m=>m.group===g.id)}))
+    : STATE.owners.filter(o=>STATE.members.some(m=>m.owner===o.id))
+        .map(o=>({key:o.id,name:o.name,list:STATE.members.filter(m=>m.owner===o.id)}));
+}
+/* 汇总口径：始终基于全量成员与各分组目标之和，不依赖当前切换的 scopes */
+function overall(){
+  const done=Object.fromEntries(CONFIG.metrics.map(m=>[m.id,0]));
+  const cover=Object.fromEntries(CONFIG.metrics.map(m=>[m.id,0]));
+  const target=Object.fromEntries(CONFIG.metrics.map(m=>[m.id,0]));
+  STATE.members.forEach(m=>{
+    const p=progOf(m.id);
+    CONFIG.metrics.forEach(k=>{ const v=+p[k.id]||0; if(v>0){ done[k.id]+=v; cover[k.id]++; } });
+  });
+  CONFIG.groups.forEach(g=>{ const t=targetsOf(g.id);
+    CONFIG.metrics.forEach(k=>{ target[k.id]+=+t[k.id]||0; }); });
+  return {total:STATE.members.length,done,cover,target};
+}
+function taskBuckets(){
+  const late=[],today=[],soon=[],done=[];
+  STATE.tasks.forEach(t=>{
+    if(t.done){ done.push(t); return; }
+    if(t.due<CUR_DATE) late.push(t);
+    else if(t.due===CUR_DATE) today.push(t);
+    else soon.push(t);
+  });
+  return {late,today,soon,done};
+}
+function statsOf(groupId){
+  const rows=STATE.pipeline.filter(r=>r.group===groupId);
+  const finished=rows.filter(r=>r.stage==='已完成').length;
+  const active=rows.filter(r=>CONFIG.activeStages.indexOf(r.stage)>=0).length;
+  const goal=+(STATE.goals||{})[groupId]||0;
+  return {goal,finished,active,rows:rows.length,
+    rate:goal>0?Math.min(100,Math.round(finished/goal*100)):0,gap:Math.max(0,goal-finished)};
+}
+function statsOverall(){
+  let goal=0,finished=0,active=0;
+  CONFIG.groups.forEach(g=>{ const s=statsOf(g.id); goal+=s.goal; finished+=s.finished; active+=s.active; });
+  return {goal,finished,active,rows:STATE.pipeline.length,
+    rate:goal>0?Math.min(100,Math.round(finished/goal*100)):0,gap:Math.max(0,goal-finished)};
+}
+function headcountOverall(){
+  const hc=STATE.headcount||{}; let goal=0,filled=0;
+  CONFIG.groups.forEach(g=>{ const v=+hc[g.id]||0; goal+=v; if(v>0) filled++; });
+  const cur=STATE.members.length;
+  return {goal,cur,gap:Math.max(0,goal-cur),over:Math.max(0,cur-goal),filled,total:CONFIG.groups.length};
+}
+/* 手写内联 SVG：关系图固定画布 / 固定半径 / 均匀角度，每组形态完全一致 */
+function relationSvg(label,list){
+  const W=180,H=130,cx=W/2,cy=H/2,R=48,n=list.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)} 关联 ${n} 人">`;
+  const pts=list.map((m,i)=>{ const a=(i/Math.max(1,n))*Math.PI*2-Math.PI/2;
+    return {x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R*0.72,i,m}; });
+  pts.forEach(p=>{ s+=`<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="rgba(167,139,250,.45)" stroke-width="1"/>`; });
+  pts.forEach(p=>{
+    const has=CONFIG.metrics.some(k=>(+progOf(p.m.id)[k.id]||0)>0);
+    const dx=p.x-cx, right=dx>0.5?true:(dx<-0.5?false:(p.i%2===0));
+    s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${has?'#3ecf8e':'#8b6df0'}" stroke="rgba(0,0,0,.35)" stroke-width=".8"/>`;
+    s+=`<text x="${(right?p.x+7:p.x-7).toFixed(1)}" y="${(p.y+3).toFixed(1)}" text-anchor="${right?'start':'end'}" font-size="8.5" fill="#c9c0e6">${esc(p.m.name.replace(/^示例/,''))}</text>`;
+  });
+  s+=`<circle cx="${cx}" cy="${cy}" r="16" fill="#6d4fd6" stroke="#c9bbf7" stroke-width="1.2"/>`;
+  s+=`<text x="${cx}" y="${cy+3.4}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#fff">${esc(label)}</text></svg>`;
+  return s;
+}
+/* 手写内联 SVG：环形进度 */
+function ringSvg(rate){
+  const C=2*Math.PI*24, off=C*(1-Math.max(0,Math.min(100,rate))/100);
+  return `<svg viewBox="0 0 62 62" width="62" height="62" aria-label="完成率 ${rate}%">
+    <circle cx="31" cy="31" r="24" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/>
+    <circle cx="31" cy="31" r="24" fill="none" stroke="#3ecf8e" stroke-width="7" stroke-linecap="round"
+      stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 31 31)"/>
+    <text x="31" y="35" text-anchor="middle" font-size="13" font-weight="700" fill="#ece9f5">${rate}%</text></svg>`;
+}
+/* 手写内联 SVG：整体分布柱状图 */
+function barsSvg(agg){
+  const W=280,H=96,n=CONFIG.metrics.length,bw=Math.min(46,Math.floor(W/(n*2)));
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="各项指标完成情况">`;
+  s+=`<line x1="8" y1="72" x2="${W-8}" y2="72" stroke="rgba(255,255,255,.18)" stroke-width="1"/>`;
+  CONFIG.metrics.forEach((k,i)=>{
+    const r=pct(agg.done[k.id],agg.target[k.id]||0), hh=Math.round(r*0.52);
+    const x=Math.round((i+0.5)*W/n-bw/2);
+    s+=`<rect x="${x}" y="${72-hh}" width="${bw}" height="${Math.max(2,hh)}" rx="3" fill="#8b6df0"/>`;
+    s+=`<text x="${x+bw/2}" y="${68-hh}" text-anchor="middle" font-size="10" fill="#ece9f5">${r}%</text>`;
+    s+=`<text x="${x+bw/2}" y="87" text-anchor="middle" font-size="10" fill="#a79fc4">${esc(k.name)}</text>`;
+  });
+  return s+`</svg>`;
+}
+
+/* ============================================================
+   4. 渲染层 —— 各函数只读状态、只拼字符串，彼此严禁互调
+   ============================================================ */
+let VIEW='board', BOARD_MODE='group', CUR_DATE=todayStr();
+
+/* 模块 1：今天要处理（所有视图共用置顶区） */
+function renderToday(){
+  const b=taskBuckets();
+  const pending=b.late.length+b.today.length+b.soon.length;
+  let h=`<div class="todo"><div class="t">今天要处理 · ${pending} 项待办 / 已完成 ${b.done.length} 项</div>`;
+  if(!pending && !b.done.length) h+=`<div class="empty">暂无待办，可在下方新增。</div>`;
+  const row=function(t,cls,tag){
+    return `<div class="todoItem"><b class="${cls||''}">${esc(t.title)}</b>
+      <span class="hint">${esc(t.due)}</span>${tag||''}
+      <button class="btn sm" data-act="taskDone" data-id="${esc(t.id)}">标记完成</button></div>`;
+  };
+  /* 昨天没做完的自动顺延到今天：逾期项始终列出，不会被丢弃 */
+  b.late.forEach(t=>h+=row(t,'','<span class="late">已逾期，需优先处理</span>'));
+  b.today.forEach(t=>h+=row(t,'','<span class="hint">今天</span>'));
+  b.soon.forEach(t=>h+=row(t,'','<span class="hint">即将到期</span>'));
+  b.done.slice(0,3).forEach(t=>h+=`<div class="todoItem"><b class="done">${esc(t.title)}</b>
+    <span class="hint">${esc(t.due)} · 已完成</span>
+    <button class="btn sm ghost" data-act="taskUndo" data-id="${esc(t.id)}">撤销</button></div>`);
+  h+=`<div class="formRow" style="margin:9px 0 0">
+    <label class="fd"><span>新增待办</span><input id="taskTitle" placeholder="要做什么"></label>
+    <label class="fd"><span>截止日期</span><input id="taskDue" type="date" value="${CUR_DATE}"></label>
+    <button class="btn" data-act="addTask">新增</button>
+  </div></div>`;
+  return h;
+}
+
+/* 模块 2：进度看板（含全量汇总行 + 内联 SVG 图表） */
+function renderBoard(){
+  const agg=overall();
+  const totalTarget=sum(CONFIG.metrics.map(k=>agg.target[k.id]));
+  const totalDone=sum(CONFIG.metrics.map(k=>agg.done[k.id]));
+  const rate=pct(totalDone,totalTarget);
+  const activeMembers=STATE.members.filter(m=>CONFIG.metrics.some(k=>(+progOf(m.id)[k.id]||0)>0)).length;
+  let h=`<div class="card"><h2>进度看板</h2>
+    <div class="desc">按分组 / 负责人查看各指标实际完成与覆盖率。末行「全部合计」按全量成员计算，
+      不随上方维度切换而改变；覆盖率 = 有该指标进度的成员数 ÷ 总人数。</div>
+    <div class="kpi">
+      <div class="box"><div class="k">成员总数</div><div class="v">${agg.total}</div></div>
+      <div class="box"><div class="k">已有进度</div><div class="v">${activeMembers}</div></div>
+      <div class="box"><div class="k">整体达成率</div><div class="v" style="color:var(--ok)">${rate}%</div></div>
+    </div>
+    <div style="margin-bottom:10px"><div class="seg">
+      <button data-act="modeGroup" class="${BOARD_MODE==='group'?'on':''}">按分组</button>
+      <button data-act="modeOwner" class="${BOARD_MODE==='owner'?'on':''}">按负责人</button>
+    </div></div>
+    <div class="tbl"><table class="freeze"><thead><tr>
+      <th class="l">${BOARD_MODE==='group'?'分组':'负责人'}</th>`;
+  CONFIG.metrics.forEach(k=>h+=`<th colspan="2">${esc(k.name)}</th>`);
+  h+=`</tr><tr><th class="l"></th>`;
+  CONFIG.metrics.forEach(k=>h+=`<th>实际完成</th><th>覆盖率</th>`);
+  h+=`</tr></thead><tbody>`;
+  scopes().forEach(sc=>{
+    const done=Object.fromEntries(CONFIG.metrics.map(k=>[k.id,0]));
+    const cover=Object.fromEntries(CONFIG.metrics.map(k=>[k.id,0]));
+    sc.list.forEach(m=>{ const p=progOf(m.id); CONFIG.metrics.forEach(k=>{
+      const v=+p[k.id]||0; if(v>0){ done[k.id]+=v; cover[k.id]++; } }); });
+    h+=`<tr><td class="l"><b>${esc(sc.name)}</b><div class="hint">共 ${sc.list.length} 人</div></td>`;
+    CONFIG.metrics.forEach(k=>{
+      h+=`<td>${done[k.id]}</td><td>${heatCell(pct(cover[k.id],sc.list.length))}</td>`;
+    });
+    h+=`</tr>`;
+  });
+  /* 汇总行：全量计算，切到「按负责人」时未关联负责人的成员也不会被漏掉 */
+  h+=`<tr class="sumrow"><td class="l"><b>全部合计</b><div class="hint">共 ${agg.total} 人 · 全量口径</div></td>`;
+  CONFIG.metrics.forEach(k=>{
+    h+=`<td>${agg.done[k.id]}</td><td>${heatCell(pct(agg.cover[k.id],agg.total))}</td>`;
+  });
+  h+=`</tr></tbody></table></div></div>`;
+  h+=`<div class="card"><h2>整体达成</h2>
+    <div class="desc">柱状图按「全量实际合计 ÷ 全部分组目标合计」计算，手写内联 SVG，无图表库。</div>
+    <div style="max-width:320px">${barsSvg(agg)}</div>
+    <div class="hint" style="margin-top:8px">Σ实际 ${totalDone} ÷ Σ目标 ${totalTarget} = ${rate}%</div>
+  </div>`;
+  return h;
+}
+
+/* 模块 3：成员名册（追加导入，绝不覆盖已有记录） */
+function renderRoster(){
+  let h=`<div class="card"><h2>成员名册</h2>
+    <div class="desc">追加导入按「成员编号 || 姓名」去重，只新增不覆盖，已有记录与业务数据不受影响。
+      支持 CSV 与 JSON；末行「全部合计」为全量人数。</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn ghost" data-act="downloadTemplate">下载 CSV 模板</button>
+      <button class="btn ghost" data-act="importRoster">追加导入</button>
+      <button class="btn ghost" data-act="exportCSV">导出 CSV</button>
+    </div>
+    <div class="formRow">
+      <label class="fd"><span>分组</span><select id="newGroup">${CONFIG.groups.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('')}</select></label>
+      <label class="fd"><span>负责人</span><select id="newOwner">${STATE.owners.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select></label>
+      <label class="fd"><span>成员编号</span><input id="newCode" placeholder="选填"></label>
+      <label class="fd"><span>姓名</span><input id="newName" placeholder="必填"></label>
+      <label class="fd"><span>备注</span><input id="newNote" placeholder="选填"></label>
+      <button class="btn" data-act="addMember">新增成员</button>
+    </div>
+    <div class="tbl"><table class="freeze"><thead><tr>
+      <th class="l">分组</th><th>负责人</th><th>成员编号</th><th>姓名</th><th>备注</th><th>操作</th>
+    </tr></thead><tbody>`;
+  STATE.members.forEach(m=>{
+    h+=`<tr><td class="l"><select data-f="member" data-id="${esc(m.id)}" data-key="group">${CONFIG.groups.map(g=>`<option value="${esc(g.id)}" ${g.id===m.group?'selected':''}>${esc(g.name)}</option>`).join('')}</select></td>
+      <td><select data-f="member" data-id="${esc(m.id)}" data-key="owner">${STATE.owners.map(o=>`<option value="${esc(o.id)}" ${o.id===m.owner?'selected':''}>${esc(o.name)}</option>`).join('')}</select></td>
+      <td><input data-f="member" data-id="${esc(m.id)}" data-key="code" value="${esc(m.code)}" style="width:96px"></td>
+      <td><input data-f="member" data-id="${esc(m.id)}" data-key="name" value="${esc(m.name)}" style="width:120px"></td>
+      <td><input data-f="member" data-id="${esc(m.id)}" data-key="note" value="${esc(m.note)}" style="width:120px"></td>
+      <td><button class="btn sm danger" data-act="delMember" data-id="${esc(m.id)}">删除</button></td></tr>`;
+  });
+  h+=`<tr class="sumrow"><td class="l"><b>全部合计</b><div class="hint">共 ${STATE.members.length} 人</div></td>
+    <td colspan="5" class="l hint">各分组：${CONFIG.groups.map(g=>esc(g.name)+' '+STATE.members.filter(m=>m.group===g.id).length+' 人').join(' · ')}</td></tr>`;
+  h+=`</tbody></table></div></div>`;
+  return h;
+}
+
+/* 模块 4：目标与扩充（分组卡 + 通栏汇总卡 + 关系图 + 明细） */
+function renderGrowth(){
+  const hc=headcountOverall(), all=statsOverall();
+  const todo=STATE.pipeline.filter(r=>CONFIG.activeStages.indexOf(r.stage)>=0);
+  let h=`<div class="card"><h2>目标与扩充</h2>
+    <div class="desc">规模目标与扩充目标均由各分组手工填写；缺口 = 目标 − 当前，不出现负数。
+      通栏「全部合计」按各分组目标之和计算，关系图固定尺寸整齐排列。</div>`;
+  /* 待跟进置顶：超过 7 天标红，一键归档 */
+  h+=`<div class="todo"><div class="t">本期待跟进 · ${todo.length} 条</div>`;
+  if(!todo.length) h+=`<div class="hint">暂无跟进中条目，可在下方明细新增。</div>`;
+  todo.forEach(r=>{
+    const days=r.createdAt?Math.max(0,Math.floor((Date.now()-new Date(r.createdAt+'T00:00:00').getTime())/86400000)):0;
+    h+=`<div class="todoItem"><b>${esc(r.name)}</b>
+      <span class="hint">${esc(groupName(r.group))} · ${esc(r.stage)}</span>`;
+    if(days>=7) h+=`<span class="late">已跟进 ${days} 天，需推进</span>`;
+    h+=`<button class="btn sm" data-act="stageDone" data-id="${esc(r.id)}">标记完成</button></div>`;
+  });
+  h+=`</div><div class="wrap">`;
+  CONFIG.groups.forEach(g=>{
+    const st=statsOf(g.id), goal=+(STATE.goals||{})[g.id]||0;
+    const hGoal=+(STATE.headcount||{})[g.id]||0;
+    const list=STATE.members.filter(m=>m.group===g.id);
+    const owners=STATE.owners.filter(o=>list.some(m=>m.owner===o.id));
+    const diff=hGoal-list.length;
+    h+=`<div class="subcard"><h3>${esc(g.name)}</h3>
+      <div class="sub">当前 ${list.length} 人 · ${owners.length} 位负责人</div>
+      <div class="formRow" style="margin:0 0 9px;padding:8px">
+        <label class="fd"><span>规模目标</span><input type="number" min="0" data-f="headcount" data-g="${esc(g.id)}" value="${hGoal||''}" placeholder="待填" style="width:82px"></label>
+        <label class="fd"><span>扩充目标</span><input type="number" min="0" data-f="goal" data-g="${esc(g.id)}" value="${goal||''}" placeholder="待填" style="width:82px"></label>
+        <span class="hint">缺口 ${hGoal>0?Math.max(0,diff):'—'} 人${hGoal>0&&diff<0?' · 超出 '+(-diff):''}</span>
+      </div>
+      <div class="mini">
+        <div class="m"><div class="k">已完成</div><div class="v" style="color:var(--ok)">${st.finished}</div></div>
+        <div class="m"><div class="k">跟进中</div><div class="v" style="color:var(--info)">${st.active}</div></div>
+        <div class="m"><div class="k">缺口</div><div class="v" style="color:${st.gap>0?'var(--warn)':'var(--ok)'}">${st.gap}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px">${ringSvg(st.rate)}
+        <span class="hint">完成率 = 已完成 ÷ 扩充目标<br>明细共 ${st.rows} 条</span></div>
+      <div class="stars">`;
+    if(!owners.length) h+=`<div class="hint">暂无关联负责人</div>`;
+    owners.forEach(o=>{ const subs=list.filter(m=>m.owner===o.id);
+      h+=`<div class="starBox"><div class="cap"><b>${esc(o.name)}</b> · ${subs.length} 人</div>${relationSvg(o.name,subs)}</div>`; });
+    const free=list.filter(m=>!m.owner);
+    if(free.length) h+=`<div class="starBox"><div class="cap"><b>未关联</b> · ${free.length} 人</div>${relationSvg('未关联',free)}</div>`;
+    h+=`</div></div>`;
+  });
+  /* 通栏汇总卡 1：规模 */
+  h+=`<div class="sumbar"><div class="t">全部合计</div>
+    <div class="it"><span class="k">规模目标</span><span class="v">${hc.goal>0?hc.goal:'—'}</span></div>
+    <div class="it"><span class="k">当前人数</span><span class="v">${hc.cur}</span></div>
+    <div class="it"><span class="k">缺口</span><span class="v" style="color:${hc.gap>0?'var(--warn)':'var(--ok)'}">${hc.goal>0?hc.gap:'—'}</span></div>
+    <div class="it"><span class="k">超出</span><span class="v" style="color:var(--ok)">${hc.goal>0?hc.over:'—'}</span></div>
+    <div class="note">各分组目标合计 · ${hc.filled}/${hc.total} 已填<br>缺口 = 目标 − 当前</div></div>`;
+  /* 通栏汇总卡 2：扩充 */
+  h+=`<div class="sumbar"><div class="t">全部合计</div>
+    <div class="it"><span class="k">扩充目标</span><span class="v">${all.goal}</span></div>
+    <div class="it"><span class="k">已完成</span><span class="v" style="color:var(--ok)">${all.finished}</span></div>
+    <div class="it"><span class="k">跟进中</span><span class="v" style="color:var(--info)">${all.active}</span></div>
+    <div class="it"><span class="k">缺口</span><span class="v" style="color:${all.gap>0?'var(--warn)':'var(--ok)'}">${all.gap}</span></div>
+    <div class="it"><span class="k">完成率</span><span class="v" style="color:var(--accent)">${all.rate}%</span></div>
+    <div class="note">各分组目标合计 · 完成率 = 已完成 ÷ 目标<br>明细共 ${all.rows} 条</div></div>`;
+  h+=`</div>`;
+  /* 扩充明细 */
+  h+=`<div class="card" style="margin-top:14px"><h2>扩充进度明细</h2>
+    <div class="desc">字段可按业务需要增减；阶段下拉来自 CONFIG.stages。</div>
+    <div class="formRow">
+      <label class="fd"><span>分组</span><select id="pipeGroup">${CONFIG.groups.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('')}</select></label>
+      <label class="fd"><span>名称</span><input id="pipeName" placeholder="必填"></label>
+      <label class="fd"><span>阶段</span><select id="pipeStage">${CONFIG.stages.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('')}</select></label>
+      <button class="btn" data-act="addPipeline">新增条目</button>
+    </div>
+    <div class="tbl"><table class="freeze"><thead><tr>
+      <th class="l">分组</th><th>名称</th><th>阶段</th><th>创建日期</th><th>操作</th>
+    </tr></thead><tbody>`;
+  STATE.pipeline.forEach(r=>{
+    h+=`<tr><td class="l">${esc(groupName(r.group))}</td><td>${esc(r.name)}</td>
+      <td><select data-f="stage" data-id="${esc(r.id)}">${CONFIG.stages.map(s=>`<option value="${esc(s)}" ${s===r.stage?'selected':''}>${esc(s)}</option>`).join('')}</select></td>
+      <td class="hint">${esc(r.createdAt||'')}</td>
+      <td><button class="btn sm danger" data-act="delPipeline" data-id="${esc(r.id)}">删除</button></td></tr>`;
+  });
+  h+=`<tr class="sumrow"><td class="l"><b>全部合计</b></td><td colspan="4" class="l hint">共 ${STATE.pipeline.length} 条 · 已完成 ${all.finished} · 跟进中 ${all.active}</td></tr>`;
+  h+=`</tbody></table></div></div></div>`;
+  return h;
+}
+
+/* ============================================================
+   5. 统一刷新入口 —— 唯一的联动调度点
+   ============================================================ */
+function refreshAll(){
+  let h=renderToday();
+  if(VIEW==='board') h+=renderBoard();
+  else if(VIEW==='roster') h+=renderRoster();
+  else h+=renderGrowth();
+  document.getElementById('viewRoot').innerHTML=h;
+  document.querySelectorAll('#nav button').forEach(function(b){
+    b.classList.toggle('active',b.dataset.v===VIEW);
+  });
+  const dp=document.getElementById('datePick'); if(dp && dp.value!==CUR_DATE) dp.value=CUR_DATE;
+}
+function setView(v){ VIEW=v; refreshAll(); }
+
+/* ============================================================
+   6. 交互层 —— 改数据 → save() → refreshAll()，绝不直接调渲染函数
+   ============================================================ */
+function toggleSidebar(force){
+  const sb=document.getElementById('sidebar'), mk=document.getElementById('sideMask');
+  if(!sb) return;
+  const open=force!=null?force:!sb.classList.contains('open');
+  sb.classList.toggle('open',open); if(mk) mk.classList.toggle('show',open);
+}
+function csvCell(v){ const s=(v==null?'':String(v)); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+function parseCSV(text){
+  const rows=[];
+  const lines=String(text).replace(/^\uFEFF/,'').split(/\r?\n/).filter(function(l){ return l.trim()!==''; });
+  if(!lines.length) return [];
+  function splitLine(line){
+    const out=[]; let cur='',q=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){ if(q&&line[i+1]==='"'){ cur+='"'; i++; } else q=!q; }
+      else if(ch===','&&!q){ out.push(cur.trim()); cur=''; }
+      else cur+=ch;
+    }
+    out.push(cur.trim()); return out;
+  }
+  const head=splitLine(lines[0]);
+  lines.slice(1).forEach(function(l){
+    const cells=splitLine(l), o={};
+    head.forEach(function(k,i){ o[k]=cells[i]==null?'':cells[i]; });
+    rows.push(o);
+  });
+  return rows;
+}
+function download(name,text,mime,bom){
+  const blob=new Blob([(bom?'\uFEFF':'')+text],{type:mime||'text/plain;charset=utf-8'});
+  const a=document.createElement('a'); const url=URL.createObjectURL(blob);
+  a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); },1000);
+}
+function rosterFromRows(rows){
+  const A={
+    group:['分组','组别','group'],owner:['负责人','owner'],
+    code:['成员编号','编号','code'],name:['姓名','名称','name'],note:['备注','note']
+  };
+  function pick(r,keys){
+    for(const k of keys){ if(r[k]!=null&&String(r[k]).trim()) return String(r[k]).trim(); }
+    return '';
+  }
+  return rows.map(function(r){
+    const gRaw=pick(r,A.group), oRaw=pick(r,A.owner);
+    const g=CONFIG.groups.find(x=>x.id===gRaw||x.name===gRaw)||CONFIG.groups[0];
+    const o=STATE.owners.find(x=>x.id===oRaw||x.name===oRaw);
+    return {id:uid('m'),group:g?g.id:'',owner:o?o.id:'',code:pick(r,A.code),
+      name:pick(r,A.name),note:pick(r,A.note)};
+  }).filter(function(x){ return x.name; });
+}
+/* 追加导入：只 push 新记录，已存在的跳过，绝不覆盖现有人员与已有业务数据 */
+function applyRosterImport(rows){
+  const seen=new Set(STATE.members.map(function(m){ return m.code||m.name; }));
+  let added=0,skipped=0;
+  rows.forEach(function(r){
+    const k=r.code||r.name;
+    if(seen.has(k)){ skipped++; return; }
+    STATE.members.push(r); seen.add(k); added++;
+  });
+  save(); refreshAll(); toast('已追加 '+added+' 条，跳过重复 '+skipped+' 条');
+}
+function exportJSON(){
+  download(CONFIG.storageKey+'_'+CUR_DATE+'.json',JSON.stringify(STATE,null,2),'application/json',false);
+}
+function exportCSV(){
+  const lines=[CONFIG.rosterFields.join(',')];
+  STATE.members.forEach(function(m){
+    lines.push([groupName(m.group),ownerName(m.owner),m.code,m.name,m.note].map(csvCell).join(','));
+  });
+  download('roster_'+CUR_DATE+'.csv',lines.join('\r\n'),'text/csv',true);
+}
+function downloadTemplate(){
+  const lines=[CONFIG.rosterFields.join(',')];
+  lines.push([CONFIG.groups[0]?CONFIG.groups[0].name:'',STATE.owners[0]?STATE.owners[0].name:'',
+    'X-001','示例成员',''].map(csvCell).join(','));
+  download('roster_template.csv',lines.join('\r\n'),'text/csv',true);
+}
+function importJSONFile(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=function(){
+    try{
+      const raw=String(rd.result).replace(/^\uFEFF/,'');
+      const d=JSON.parse(raw);
+      if(!d||typeof d!=='object') throw new Error('bad');
+      STATE=normalize(d); save(); refreshAll(); toast('恢复完成');
+    }catch(err){ toast('文件格式不正确，未改动现有数据'); }
+    e.target.value='';
+  };
+  rd.readAsText(f,'utf-8');
+}
+function importRosterFile(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=function(){
+    try{
+      const raw=String(rd.result).replace(/^\uFEFF/,'');
+      let rows;
+      if(/\.json$/i.test(f.name)){ const d=JSON.parse(raw); rows=Array.isArray(d)?d:(d.members||[]); }
+      else rows=parseCSV(raw);
+      applyRosterImport(rosterFromRows(rows));
+    }catch(err){ toast('导入失败：'+err.message); }
+    e.target.value='';
+  };
+  rd.readAsText(f,'utf-8');
+}
+function handleInput(el,type){
+  /* 只认 change：每次敲字就重建 DOM 会让输入框失焦 */
+  if(type!=='change') return;
+  const f=el.dataset.f;
+  if(f==='member'){
+    const m=STATE.members.find(x=>x.id===el.dataset.id);
+    if(m){ m[el.dataset.key]=el.value; save(); refreshAll(); }
+  }else if(f==='goal'){
+    if(!STATE.goals) STATE.goals={};
+    STATE.goals[el.dataset.g]=Math.max(0,+el.value||0); save(); refreshAll();
+  }else if(f==='headcount'){
+    if(!STATE.headcount) STATE.headcount={};
+    STATE.headcount[el.dataset.g]=Math.max(0,+el.value||0); save(); refreshAll();
+  }else if(f==='stage'){
+    const r=STATE.pipeline.find(x=>x.id===el.dataset.id);
+    if(r){ r.stage=el.value; save(); refreshAll(); }
+  }
+}
+function handleAct(act,el){
+  if(act==='toggleSidebar'){ toggleSidebar(); return; }
+  if(act==='modeGroup'){ BOARD_MODE='group'; refreshAll(); return; }
+  if(act==='modeOwner'){ BOARD_MODE='owner'; refreshAll(); return; }
+  if(act==='taskDone'||act==='taskUndo'){
+    const t=STATE.tasks.find(x=>x.id===el.dataset.id);
+    if(t){ t.done=(act==='taskDone'); save(); refreshAll(); } return;
+  }
+  if(act==='addTask'){
+    const t=document.getElementById('taskTitle'), d=document.getElementById('taskDue');
+    const title=t?t.value.trim():'';
+    if(!title){ toast('请填写待办内容'); return; }
+    STATE.tasks.push({id:uid('t'),title:title,due:(d&&d.value)||CUR_DATE,done:false});
+    save(); refreshAll(); return;
+  }
+  if(act==='addMember'){
+    const v=function(id){ const x=document.getElementById(id); return x?x.value.trim():''; };
+    const name=v('newName');
+    if(!name){ toast('请填写姓名'); return; }
+    STATE.members.push({id:uid('m'),group:v('newGroup'),owner:v('newOwner'),
+      code:v('newCode'),name:name,note:v('newNote')});
+    save(); refreshAll(); return;
+  }
+  if(act==='delMember'){
+    if(!confirm('确定删除该成员吗？此操作不可撤销。')) return;
+    STATE.members=STATE.members.filter(x=>x.id!==el.dataset.id);
+    save(); refreshAll(); return;
+  }
+  if(act==='downloadTemplate'){ downloadTemplate(); return; }
+  if(act==='importRoster'){ document.getElementById('rosterFile').click(); return; }
+  if(act==='exportCSV'){ exportCSV(); return; }
+  if(act==='exportJSON'){ exportJSON(); return; }
+  if(act==='importJSON'){ document.getElementById('restoreFile').click(); return; }
+  if(act==='clearDemo'){
+    if(!confirm('确定清空示例数据吗？此操作不可撤销，建议先导出备份。')) return;
+    STATE.members=[]; STATE.tasks=[]; STATE.pipeline=[]; STATE.progress={}; STATE.demo=false;
+    save(); refreshAll(); toast('示例数据已清空'); return;
+  }
+  if(act==='addPipeline'){
+    const nameEl=document.getElementById('pipeName');
+    const name=nameEl?nameEl.value.trim():'';
+    if(!name){ toast('请填写名称'); return; }
+    const g=document.getElementById('pipeGroup'), s=document.getElementById('pipeStage');
+    STATE.pipeline.push({id:uid('p'),group:g?g.value:'',name:name,
+      stage:s?s.value:CONFIG.stages[0],createdAt:CUR_DATE});
+    save(); refreshAll(); return;
+  }
+  if(act==='stageDone'){
+    const r=STATE.pipeline.find(x=>x.id===el.dataset.id);
+    if(r){ r.stage='已完成'; save(); refreshAll(); } return;
+  }
+  if(act==='delPipeline'){
+    if(!confirm('确定删除该条目吗？')) return;
+    STATE.pipeline=STATE.pipeline.filter(x=>x.id!==el.dataset.id);
+    save(); refreshAll(); return;
+  }
+}
+
+/* ============================================================
+   7. 初始化 —— 加载数据 → 初始化状态 → 绑定事件 → refreshAll()
+   ============================================================ */
+function init(){
+  STATE=load();
+  const brand=document.getElementById('brandTitle');
+  if(brand) brand.innerHTML=esc(CONFIG.title)+'<span>单文件 · 离线可用</span>';
+  const mob=document.getElementById('mobTitle'); if(mob) mob.textContent=CONFIG.title;
+  document.title=CONFIG.title+' · 模板';
+  const dp=document.getElementById('datePick');
+  if(dp){ dp.value=CUR_DATE; dp.addEventListener('change',function(e){
+    CUR_DATE=e.target.value||todayStr(); refreshAll(); }); }
+  const nav=document.getElementById('nav');
+  if(nav) nav.addEventListener('click',function(e){
+    const b=e.target.closest('button[data-v]');
+    if(b){ setView(b.dataset.v); if(window.innerWidth<=920) toggleSidebar(false); }
+  });
+  const mk=document.getElementById('sideMask');
+  if(mk) mk.addEventListener('click',function(){ toggleSidebar(false); });
+  const app=document.getElementById('app');
+  document.addEventListener('click',function(e){
+    const el=e.target.closest('[data-act]'); if(el) handleAct(el.dataset.act,el);
+  });
+  if(app){
+    app.addEventListener('input',function(e){ const el=e.target.closest('[data-f]'); if(el) handleInput(el,'input'); });
+    app.addEventListener('change',function(e){ const el=e.target.closest('[data-f]'); if(el) handleInput(el,'change'); });
+  }
+  const rf=document.getElementById('restoreFile'); if(rf) rf.addEventListener('change',importJSONFile);
+  const mf=document.getElementById('rosterFile'); if(mf) mf.addEventListener('change',importRosterFile);
+  refreshAll();
+  adoptCloud();   /* 宿主没提供 HostDB 时自动保持纯本地模式 */
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+else init();
+</script>
+</body>
+</html>

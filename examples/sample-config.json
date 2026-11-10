@@ -1,0 +1,20 @@
+{
+  "title": "通用工作台",
+  "subtitle": "按分组 / 负责人查看进度与目标",
+  "storageKey": "ws_generic_v1",
+  "groups": [
+    { "id": "g1", "name": "A 组" },
+    { "id": "g2", "name": "B 组" },
+    { "id": "g3", "name": "C 组" }
+  ],
+  "metrics": [
+    { "id": "k1", "name": "指标一", "defaultTarget": 4 },
+    { "id": "k2", "name": "指标二", "defaultTarget": 3 },
+    { "id": "k3", "name": "指标三", "defaultTarget": 3 }
+  ],
+  "states": ["未开始", "进行中", "已完成"],
+  "stages": ["跟进中", "已确认", "已完成", "暂缓"],
+  "activeStages": ["跟进中", "已确认"],
+  "rosterFields": ["分组", "负责人", "成员编号", "姓名", "备注"],
+  "accent": "#8b6df0"
+}
